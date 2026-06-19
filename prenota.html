@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prenota un Tavolo</title>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
+        body { background: #f4f6f9; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
+        .booking-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 450px; }
+        h2 { color: #2c3e50; margin-bottom: 20px; text-align: center; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; color: #7f8c8d; font-weight: bold; font-size: 0.9rem; }
+        select, input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; background: #fafafa; }
+        button { width: 100%; padding: 14px; background: #3498db; color: white; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #2980b9; }
+        .alert { padding: 10px; border-radius: 6px; text-align: center; margin-top: 15px; font-weight: bold; display: none; }
+    </style>
+</head>
+<body>
+
+<div class="booking-card">
+    <h2>Prenota il tuo Tavolo 🍽️</h2>
+    <form id="form-prenotazione">
+        <div class="form-group">
+            <label>Tuo Nome</label>
+            <input type="text" id="nome_cliente" placeholder="Inserisci Nome e Cognome" required>
+        </div>
+        <div class="form-group">
+            <label>Numero di Telefono</label>
+            <input type="tel" id="telefono" placeholder="Es. 3331234567" required>
+        </div>
+        <div class="form-group">
+            <label>Seleziona Giorno (Prossimi 7 giorni)</label>
+            <select id="data-selezionata" required></select>
+        </div>
+        <div class="form-group">
+            <label>Orario</label>
+            <select id="ora" required>
+                <option value="19:30">19:30</option>
+                <option value="20:00">20:00</option>
+                <option value="20:30">20:30</option>
+                <option value="21:00">21:00</option>
+                <option value="21:30">21:30</option>
+            </select>
+        </div>
+        <div class="form-group">
+            <label>Numero di Persone</label>
+            <select id="persone" required>
+                <option value="1">1 Persona</option>
+                <option value="2" selected>2 Persone</option>
+                <option value="3">3 Persone</option>
+                <option value="4">4 Persone</option>
+                <option value="5">5 Persone</option>
+                <option value="6">6 Persone</option>
+            </select>
+        </div>
+        <button type="submit">Invia Prenotazione 🚀</button>
+    </form>
+    <div id="risposta-messaggio" class="alert"></div>
+</div>
+
+<script>
+    // Configura qui l'ID del ristorante a cui appartiene questa pagina di prenotazione (es. preso dall'URL o statico)
+    const RISTORANTE_ID = 1; 
+
+    // FUNZIONE PER GENERARE I PROSSIMI 7 GIORNI NELLA SELECT
+    function popolaGiorni() {
+        const selectGiorni = document.getElementById('data-selezionata');
+        const opzioniGiorni = { weekday: 'long', day: 'numeric', month: 'short' };
+        const nomiGiorniIta = {
+            'monday': 'Lunedì', 'tuesday': 'Martedì', 'wednesday': 'Mercoledì', 
+            'thursday': 'Giovedì', 'friday': 'Venerdì', 'saturday': 'Sabato', 'sunday': 'Domenica'
+        };
+
+        for (let i = 0; i < 7; i++) {
+            const dataOggetto = new Date();
+            dataOggetto.setDate(dataOggetto.getDate() + i); // Aggiunge i giorni progressivamente
+
+            // Data formattata per l'utente (es. "Giovedì, 21 Giu")
+            let giornoSettimanaInEng = dataOggetto.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+            let giornoIta = nomiGiorniIta[giornoSettimanaInEng];
+            let infoGiorno = dataOggetto.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
+            
+            let testoVisivo = i === 0 ? `Oggi (${infoGiorno})` : i === 1 ? `Domani (${infoGiorno})` : `${giornoIta} ${infoGiorno}`;
+
+            // Data formattata in formato Database YYYY-MM-DD (es. 2026-06-21)
+            const anno = dataOggetto.getFullYear();
+            const mese = String(dataOggetto.getMonth() + 1).padStart(2, '0');
+            const giorno = String(dataOggetto.getDate()).padStart(2, '0');
+            const valoreDb = `${anno}-${mese}-${giorno}`;
+
+            // Creiamo l'opzione nell'HTML
+            const opzione = document.createElement('option');
+            opzione.value = valoreDb;
+            opzione.text = testoVisivo;
+            selectGiorni.appendChild(opzione);
+        }
+    }
+
+    // Gestione dell'invio del form
+    document.getElementById('form-prenotazione').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        
+        const msgDiv = document.getElementById('risposta-messaggio');
+        const dati = {
+            ristorante_id: RISTORANTE_ID,
+            nome_cliente: document.getElementById('nome_cliente').value,
+            telefono: document.getElementById('telefono').value,
+            data: document.getElementById('data-selezionata').value,
+            ora: document.getElementById('ora').value,
+            persone: document.getElementById('persone').value
+        };
+
+        try {
+            const response = await fetch('https://gestionale-prenotazioni-backend.onrender.com/api/prenotazioni', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(dati)
+            });
+
+            const risultato = await response.json();
+
+            msgDiv.style.display = 'block';
+            if (response.ok) {
+                msgDiv.style.background = '#2ecc71';
+                msgDiv.style.color = 'white';
+                msgDiv.innerText = "Prenotazione ricevuta! Attendi la conferma del locale.";
+                document.getElementById('form-prenotazione').reset();
+            } else {
+                msgDiv.style.background = '#e74c3c';
+                msgDiv.style.color = 'white';
+                msgDiv.innerText = risultato.error || "Errore durante la prenotazione.";
+            }
+        } catch (error) {
+            msgDiv.style.display = 'block';
+            msgDiv.style.background = '#e74c3c';
+            msgDiv.style.color = 'white';
+            msgDiv.innerText = "Impossibile collegarsi al sistema.";
+        }
+    });
+
+    // Esegui la funzione al caricamento della pagina
+    window.addEventListener('DOMContentLoaded', popolaGiorni);
+</script>
+
+</body>
+</html>
