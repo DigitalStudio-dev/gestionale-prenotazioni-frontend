@@ -35,7 +35,7 @@
     <header>
         <div>
             <h1>Pannello Prenotazioni</h1>
-            <p style="color: #7f8c8d;">Ristorante ID: 1 (La Barcaccia)</p>
+            <p id="info-locale" style="color: #7f8c8d;">Caricamento locale...</p>
         </div>
         <button class="btn-refresh" onclick="caricaPrenotazioni()">🔄 Aggiorna Lista</button>
     </header>
@@ -54,7 +54,7 @@
                 </tr>
             </thead>
             <tbody id="tabella-corpo">
-                </tbody>
+            </tbody>
         </table>
         <div id="messaggio-vuoto" class="no-data" style="display: none;">
             Nessuna prenotazione trovata per questo locale.
@@ -64,31 +64,31 @@
 
 <script>
     async function caricaPrenotazioni() {
-    // Sostituisci "const ristoranteId = 1;" con questo controllo:
-    const ristoranteId = sessionStorage.getItem('ristoranteId');
-    const nomeLocale = sessionStorage.getItem('nomeLocale');
+        const ristoranteId = sessionStorage.getItem('ristoranteId');
+        const nomeLocale = sessionStorage.getItem('nomeLocale');
 
-    // Se non c'è nessun ID in memoria, significa che il ristoratore non ha fatto il login!
-    if (!ristoranteId) {
-        alert("Accesso negato. Effettua prima il login.");
-        window.location.href = 'login.html'; // Lo rispediamo al login
-        return;
-    }
-    
-    // (Opzionale) Cambiamo il testo del sottotitolo per mostrare il nome del locale reale!
-    // Se hai un tag con il testo del ristorante, puoi personalizzarlo dinamitamente:
-    // document.querySelector('header p').innerText = `Ristorante: ${nomeLocale}`;
+        if (!ristoranteId) {
+            alert("Accesso negato. Effettua prima il login.");
+            window.location.href = 'login.html';
+            return;
+        }
+        
+        // Mostra dinamicamente il nome del locale nel titolo
+        if (nomeLocale) {
+            document.getElementById('info-locale').innerText = `Ristorante: ${nomeLocale} (ID: ${ristoranteId})`;
+        }
      
         const corpoTabella = document.getElementById('tabella-corpo');
         const messaggioVuoto = document.getElementById('messaggio-vuoto');
         
         try {
-            const response = await fetch(`https://gestionale-prenotazioni-backend.onrender.com/api/prenotazioni/${idPrenotazione}/stato`);
+            // FIXATO: Rimosso "/stato" dalla fine, ora punta alla rotta corretta del backend
+            const response = await fetch(`https://gestionale-prenotazioni-backend.onrender.com/api/prenotazioni/${ristoranteId}`);
             const prenotazioni = await response.json();
 
             corpoTabella.innerHTML = '';
 
-            if (prenotazioni.length === 0) {
+            if (!prenotazioni || prenotazioni.length === 0) {
                 messaggioVuoto.style.display = 'block';
                 return;
             }
@@ -101,12 +101,10 @@
                 const dataFormattata = p.data.split('-').reverse().join('/');
                 const oraFormattata = p.ora.substring(0, 5);
 
-                // Scegliamo la classe CSS del badge in base allo stato
                 let classeBadge = 'badge-attesa';
                 if (p.stato === 'confermato') classeBadge = 'badge-confermato';
                 if (p.stato === 'rifiutato') classeBadge = 'badge-rifiutato';
 
-                // Generiamo i bottoni solo se la prenotazione è ancora "in attesa"
                 let bottoniAzione = '';
                 if (p.stato === 'in attesa') {
                     bottoniAzione = `
@@ -139,7 +137,8 @@
     // NUOVA FUNZIONE PER CAMBIARE STATO AL CLICK DEI BOTTONI
     async function cambiaStato(idPrenotazione, statoScelto) {
         try {
-            const response = await fetch(`http://localhost:5000/api/prenotazioni/${idPrenotazione}/stato`, {
+            // FIXATO: Sostituito localhost con l'endpoint reale di Render
+            const response = await fetch(`https://gestionale-prenotazioni-backend.onrender.com/api/prenotazioni/${idPrenotazione}/stato`, {
                 method: 'PATCH',
                 headers: {
                     'Content-Type': 'application/json'
@@ -148,8 +147,7 @@
             });
 
             if (response.ok) {
-                // Ricarichiamo la lista aggiornata al volo
-                caricaPrenotazioni();
+                caricaPrenotazioni(); // Ricarica la lista aggiornata al volo
             } else {
                 alert("Impossibile aggiornare lo stato.");
             }
