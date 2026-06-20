@@ -24,6 +24,10 @@
         .btn-dash:hover { background: var(--neon-violet); border-color: var(--neon-violet); }
         .btn-out { background: rgba(255, 95, 86, 0.1); border: 1px solid rgba(255, 95, 86, 0.3); color: #ff5f56; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 10px; transition: all 0.3s; }
         .btn-out:hover { background: #ff5f56; color: white; }
+        
+        /* Stile specifico per il tasto audio muto/attivo */
+        .btn-audio { background: rgba(39, 201, 63, 0.1); border: 1px solid rgba(39, 201, 63, 0.4); color: #27c93f; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 600; margin-left: 10px; transition: all 0.3s; }
+        .btn-audio.muted { background: rgba(255, 95, 86, 0.1); border: 1px solid rgba(255, 95, 86, 0.4); color: #ff5f56; }
     </style>
 </head>
 <body>
@@ -35,6 +39,8 @@
             <p id="sottotitolo-locale" style="color: var(--text-gray); margin-top: 5px;">Caricamento informazioni locale...</p>
         </div>
         <div>
+            <!-- Nuovo tasto per silenziare/attivare il suono delle notifiche -->
+            <button id="btn-toggle-audio" class="btn-audio" onclick="toggleAudio()">🔊 Suono: ATTIVO</button>
             <button class="btn-dash" onclick="caricaPrenotazioni()">🔄 Aggiorna Lista</button>
             <button class="btn-out" onclick="logout()">🚪 Esci</button>
         </div>
@@ -78,7 +84,7 @@
             <tbody id="tabella-corpo"></tbody>
         </table>
         <div id="messaggio-vuoto" class="no-data" style="display: none;">
-            Nessuna prenotazione trovata per questo locale.
+            Nessuna prenotazione trouvata per questo locale.
         </div>
     </div>
 
@@ -91,27 +97,27 @@
             <div id="msg-capienza" style="margin-top:8px; font-size:0.9rem; font-weight:bold;"></div>
         </div>
 
-    <div class="panel-box" style="margin-top: 20px;">
-    <h3>Cambia Email Aziendale</h3>
-    
-    <div id="div-step-email-1" style="margin-top: 15px;">
-        <div class="form-group">
-            <label>Nuovo Indirizzo Email</label>
-            <input type="email" id="nuova-email-impostazioni" placeholder="nuovaemail@locale.it">
-        </div>
-        <button id="btn-richiedi-email" class="btn-premium" style="margin-top: 10px; width: 100%;">Invia Codice di Verifica</button>
-    </div>
+        <div class="panel-box" style="margin-top: 20px;">
+            <h3>Cambia Email Aziendale</h3>
+            
+            <div id="div-step-email-1" style="margin-top: 15px;">
+                <div class="form-group">
+                    <label>Nuovo Indirizzo Email</label>
+                    <input type="email" id="nuova-email-impostazioni" placeholder="nuovaemail@locale.it">
+                </div>
+                <button id="btn-richiedi-email" class="btn-premium" style="margin-top: 10px; width: 100%;">Invia Codice di Verifica</button>
+            </div>
 
-    <div id="div-step-email-2" style="display: none; margin-top: 15px;">
-        <div class="form-group">
-            <label>Codice OTP ricevuto sulla nuova email</label>
-            <input type="text" id="codice-otp-email" placeholder="123456" maxlength="6" style="letter-spacing: 4px; text-align: center;">
-        </div>
-        <button id="btn-conferma-email" class="btn-premium" style="margin-top: 10px; width: 100%; background: linear-gradient(135deg, #10b981, #047857);">Conferma ed Aggiorna</button>
-    </div>
+            <div id="div-step-email-2" style="display: none; margin-top: 15px;">
+                <div class="form-group">
+                    <label>Codice OTP ricevuto sulla nuova email</label>
+                    <input type="text" id="codice-otp-email" placeholder="123456" maxlength="6" style="letter-spacing: 4px; text-align: center;">
+                </div>
+                <button id="btn-conferma-email" class="btn-premium" style="margin-top: 10px; width: 100%; background: linear-gradient(135deg, #10b981, #047857);">Conferma ed Aggiorna</button>
+            </div>
 
-    <div id="msg-email" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold;"></div>
-    </div>
+            <div id="msg-email" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold;"></div>
+        </div>
 
         <div class="panel-box">
             <h3>🔒 Sicurezza Account</h3>
@@ -128,10 +134,14 @@
     const ristoranteId = sessionStorage.getItem('ristoranteId');
     const nomeLocale = sessionStorage.getItem('nomeLocale');
 
+    // --- VARIABILI GLOBALI PER REFRESH AUTOMATICO E SUONO ---
+    let primoCaricamentoRiuscito = false;
+    let IDMassimoPrenotazione = 0; // Tiene traccia dell'ID più alto inserito nel DB
+    let audioSilenzioso = false;   // Stato del bottone Mute
+    const suonoNotifica = new Audio('notification.mp3'); // Ricordati di caricare questo file nella cartella su Vercel!
 
-
-// Chiama questa funzione subito dopo aver recuperato il `ristoranteId` dal sessionStorage
-eseguiPuliziaAutomatica();
+    // Chiama questa funzione subito dopo aver recuperato il `ristoranteId` dal sessionStorage
+    eseguiPuliziaAutomatica();
 
     if (!ristoranteId) {
         alert("Accesso negato. Effettua prima il login.");
@@ -139,16 +149,16 @@ eseguiPuliziaAutomatica();
     }
 
     // Esegui la pulizia automatica delle prenotazioni vecchie appena si apre la dashboard
-async function eseguiPuliziaAutomatica() {
-    try {
-        await fetch(`${BACKEND_URL}/api/prenotazioni/pulizia-automatica/${ristoranteId}`, {
-            method: 'POST'
-        });
-        console.log("Sistema di pulizia automatica attivato: prenotazioni vecchie rimosse.");
-    } catch (err) {
-        console.error("Errore pulizia automatica:", err);
+    async function eseguiPuliziaAutomatica() {
+        try {
+            await fetch(`${BACKEND_URL}/api/prenotazioni/pulizia-automatica/${ristoranteId}`, {
+                method: 'POST'
+            });
+            console.log("Sistema di pulizia automatica attivato: prenotazioni vecchie rimosse.");
+        } catch (err) {
+            console.error("Errore pulizia automatica:", err);
+        }
     }
-}
 
     document.getElementById('nome-locale-titolo').innerText = `Pannello ${nomeLocale}`;
     
@@ -163,6 +173,19 @@ async function eseguiPuliziaAutomatica() {
         } catch (err) { console.error(err); }
     }
 
+    // FUNZIONE DI ATTIVAZIONE/DISATTIVAZIONE AUDIO (MUTE)
+    function toggleAudio() {
+        audioSilenzioso = !audioSilenzioso;
+        const btn = document.getElementById('btn-toggle-audio');
+        if (audioSilenzioso) {
+            btn.innerText = "🔇 Suono: MUTO";
+            btn.classList.add('muted');
+        } else {
+            btn.innerText = "🔊 Suono: ATTIVO";
+            btn.classList.remove('muted');
+        }
+    }
+
     async function caricaPrenotazioni() {
         const corpoTabella = document.getElementById('tabella-corpo');
         const messaggioVuoto = document.getElementById('messaggio-vuoto');
@@ -174,10 +197,13 @@ async function eseguiPuliziaAutomatica() {
             corpoTabella.innerHTML = '';
 
             let totali = 0, attesa = 0, confermati = 0;
+            let maxIdRilevatoInQuestaChiamata = 0;
 
             if (prenotazioni.length === 0) {
                 messaggioVuoto.style.display = 'block';
                 aggiornaContatori(0, 0, 0);
+                IDMassimoPrenotazione = 0;
+                primoCaricamentoRiuscito = true;
                 return;
             }
 
@@ -187,6 +213,11 @@ async function eseguiPuliziaAutomatica() {
                 totali++;
                 if (p.stato === 'in attesa') attesa++;
                 if (p.stato === 'confermato') confermati += p.persone;
+
+                // Trova l'ID più recente tra le prenotazioni
+                if (p.id > maxIdRilevatoInQuestaChiamata) {
+                    maxIdRilevatoInQuestaChiamata = p.id;
+                }
 
                 const riga = document.createElement('tr');
                 const dataFormattata = p.data.split('-').reverse().join('/');
@@ -206,7 +237,6 @@ async function eseguiPuliziaAutomatica() {
                     bottoniAzione = `<span style="color:var(--text-gray); font-size:0.9rem; margin-right:10px; font-weight:500;">Gestita</span>`;
                 }
 
-                // Aggiungiamo il tasto per la cancellazione manuale definitivo in coda
                 bottoniAzione += `
                     <button onclick="eliminaPrenotazioneManual(${p.id})" style="background:rgba(255, 95, 86, 0.15); color:#ff5f56; border:1px solid rgba(255, 95, 86, 0.4); padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; transition:all 0.3s;" onmouseover="this.style.background='#ff5f56'; this.style.color='white';" onmouseout="this.style.background='rgba(255, 95, 86, 0.15)'; this.style.color='#ff5f56';">🗑️ Elimina</button>
                 `;
@@ -225,9 +255,20 @@ async function eseguiPuliziaAutomatica() {
 
             aggiornaContatori(totali, attesa, confermati);
 
+            // --- LOGICA DI CONTROLLO NOTIFICA SONORA ---
+            // Se la dashboard era già avviata e l'ID massimo rilevato è maggiore di quello precedente, c'è una nuova prenotazione!
+            if (primoCaricamentoRiuscito && maxIdRilevatoInQuestaChiamata > IDMassimoPrenotazione) {
+                if (!audioSilenzioso) {
+                    suonoNotifica.play().catch(err => console.log("Riproduzione bloccata dalle policy del browser, serve un'interazione utente sulla pagina.", err));
+                }
+            }
+
+            // Aggiorniamo le variabili di stato per i prossimi controlli automatici
+            IDMassimoPrenotazione = maxIdRilevatoInQuestaChiamata;
+            primoCaricamentoRiuscito = true;
+
         } catch (error) {
             console.error('Errore durante il caricamento:', error);
-            alert('Impossibile caricare le prenotazioni.');
         }
     }
 
@@ -355,7 +396,6 @@ async function eseguiPuliziaAutomatica() {
                 divMsg.style.color = "#27c93f";
                 divMsg.innerText = "Email aggiornata con successo!";
                 
-                // Pulizia e ritorno allo stato iniziale
                 document.getElementById('codice-otp-email').value = '';
                 document.getElementById('nuova-email-impostazioni').value = '';
                 setTimeout(() => {
@@ -386,7 +426,7 @@ async function eseguiPuliziaAutomatica() {
 
             if (res.ok) {
                 alert("Prenotazione eliminata con successo!");
-                caricaPrenotazioni(); // Ricarica subito la tabella aggiornando anche i contatori in alto!
+                caricaPrenotazioni(); 
             } else {
                 alert("Impossibile eliminare la prenotazione dal server.");
             }
@@ -404,6 +444,9 @@ async function eseguiPuliziaAutomatica() {
     window.addEventListener('DOMContentLoaded', () => {
         recuperaCapienzaIniziale();
         caricaPrenotazioni();
+
+        // ABILITA IL REFRESH AUTOMATICO OGNI 30 SECONDI (30000 ms)
+        setInterval(caricaPrenotazioni, 30000);
     });
 </script>
 </body>
