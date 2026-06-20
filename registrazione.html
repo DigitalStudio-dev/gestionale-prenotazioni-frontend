@@ -54,6 +54,7 @@
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         const codiceAdmin = document.getElementById('codice-admin').value;
+        const accettoPrivacy = document.getElementById('accetto-privacy').checked;
         const messaggioDiv = document.getElementById('messaggio');
         messaggioDiv.className = "status-msg";
 
@@ -61,7 +62,7 @@
             const response = await fetch('https://gestionale-prenotazioni-backend.onrender.com/api/auth/registrazione', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ nome_ristorante, email, password, codiceAdmin })
+                body: JSON.stringify({ nome_ristorante, email, password, codiceAdmin, accettoPrivacy })
             });
 
             const data = await response.json();
