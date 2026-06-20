@@ -29,6 +29,13 @@
                 <label>Codice Autorizzazione Admin</label>
                 <input type="password" id="codice-admin" placeholder="Inserisci il codice segreto" required>
             </div>
+            <!-- Inserisci questo blocco DENTRO il form, prima del tasto submit -->
+            <div class="form-group" style="margin-top: 20px; border: 1px solid rgba(139, 92, 246, 0.2); padding: 15px; border-radius: 8px;">
+                <label style="display: flex; align-items: flex-start; cursor: pointer; color: var(--text-white);">
+                <input type="checkbox" id="accetto-privacy" required style="width: 18px; margin-right: 10px; margin-top: 3px;">
+                    <span>Accetto i termini della <a href="privacy-gestionale.html" target="_blank" style="color: var(--cyber-pink); text-decoration: underline;">Privacy Policy</a> per l'utilizzo del gestionale.</span>
+                </label>
+            </div>
             <button type="submit" class="btn-premium">Crea Account Cliente ✅</button>
         </form>
         
