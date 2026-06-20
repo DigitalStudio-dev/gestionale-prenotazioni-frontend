@@ -128,10 +128,27 @@
     const ristoranteId = sessionStorage.getItem('ristoranteId');
     const nomeLocale = sessionStorage.getItem('nomeLocale');
 
+
+
+// Chiama questa funzione subito dopo aver recuperato il `ristoranteId` dal sessionStorage
+eseguiPuliziaAutomatica();
+
     if (!ristoranteId) {
         alert("Accesso negato. Effettua prima il login.");
         window.location.href = 'login.html';
     }
+
+    // Esegui la pulizia automatica delle prenotazioni vecchie appena si apre la dashboard
+async function eseguiPuliziaAutomatica() {
+    try {
+        await fetch(`${BACKEND_URL}/api/prenotazioni/pulizia-automatica/${ristoranteId}`, {
+            method: 'POST'
+        });
+        console.log("Sistema di pulizia automatica attivato: prenotazioni vecchie rimosse.");
+    } catch (err) {
+        console.error("Errore pulizia automatica:", err);
+    }
+}
 
     document.getElementById('nome-locale-titolo').innerText = `Pannello ${nomeLocale}`;
     
@@ -183,11 +200,16 @@
                 if (p.stato === 'in attesa') {
                     bottoniAzione = `
                         <button onclick="cambiaStato(${p.id}, 'confermato')" style="background:#27c93f; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; margin-right:5px;">Accetta</button>
-                        <button onclick="cambiaStato(${p.id}, 'rifiutato')" style="background:#ff5f56; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold;">Rifiuta</button>
+                        <button onclick="cambiaStato(${p.id}, 'rifiutato')" style="background:#ff5f56; color:white; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; margin-right:5px;">Rifiuta</button>
                     `;
                 } else {
-                    bottoniAzione = `<span style="color:var(--text-muted); font-size:0.9rem;">Gestita</span>`;
+                    bottoniAzione = `<span style="color:var(--text-gray); font-size:0.9rem; margin-right:10px; font-weight:500;">Gestita</span>`;
                 }
+
+                // Aggiungiamo il tasto per la cancellazione manuale definitivo in coda
+                bottoniAzione += `
+                    <button onclick="eliminaPrenotazioneManual(${p.id})" style="background:rgba(255, 95, 86, 0.15); color:#ff5f56; border:1px solid rgba(255, 95, 86, 0.4); padding:6px 10px; border-radius:4px; cursor:pointer; font-weight:bold; transition:all 0.3s;" onmouseover="this.style.background='#ff5f56'; this.style.color='white';" onmouseout="this.style.background='rgba(255, 95, 86, 0.15)'; this.style.color='#ff5f56';">🗑️ Elimina</button>
+                `;
 
                 riga.innerHTML = `
                     <td style="font-weight: bold; color: var(--text-white);">${p.nome_cliente}</td>
@@ -351,6 +373,28 @@
             divMsg.innerText = "Errore di connessione.";
         }
     });
+
+    async function eliminaPrenotazioneManual(idPrenotazione) {
+        if (!confirm("⚠️ Attenzione!\nSei sicuro di voler eliminare definitivamente questa prenotazione dal database?\nL'azione non è reversibile.")) {
+            return;
+        }
+
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/prenotazioni/${idPrenotazione}`, {
+                method: 'DELETE'
+            });
+
+            if (res.ok) {
+                alert("Prenotazione eliminata con successo!");
+                caricaPrenotazioni(); // Ricarica subito la tabella aggiornando anche i contatori in alto!
+            } else {
+                alert("Impossibile eliminare la prenotazione dal server.");
+            }
+        } catch (err) {
+            console.error("Errore eliminazione:", err);
+            alert("Errore di connessione con il server.");
+        }
+    }
 
     function logout() {
         sessionStorage.clear();
