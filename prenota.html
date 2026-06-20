@@ -61,87 +61,94 @@
 </div>
 
 <script>
-    // Configura qui l'ID del ristorante a cui appartiene questa pagina di prenotazione (es. preso dall'URL o statico)
-    const RISTORANTE_ID = 1; 
+    // 1. LEGGIAMO AUTOMATICAMENTE L'ID DALL'URL
+// Se il link è prenota.html?id=3, la variabile RISTORANTE_ID diventerà 3!
+const urlParams = new URLSearchParams(window.location.search);
+const RISTORANTE_ID = urlParams.get('id');
 
-    // FUNZIONE PER GENERARE I PROSSIMI 7 GIORNI NELLA SELECT
-    function popolaGiorni() {
-        const selectGiorni = document.getElementById('data-selezionata');
-        const opzioniGiorni = { weekday: 'long', day: 'numeric', month: 'short' };
-        const nomiGiorniIta = {
-            'monday': 'Lunedì', 'tuesday': 'Martedì', 'wednesday': 'Mercoledì', 
-            'thursday': 'Giovedì', 'friday': 'Venerdì', 'saturday': 'Sabato', 'sunday': 'Domenica'
-        };
+// Se qualcuno entra nella pagina senza mettere un ?id= nell'URL, lo blocchiamo
+if (!RISTORANTE_ID) {
+    document.body.innerHTML = `
+        <div style="text-align:center; margin-top:50px; font-family:sans-serif;">
+            <h2>⚠️ Errore: Link di prenotazione non valido.</h2>
+            <p>Manca l'identificativo del ristorante nell'URL.</p>
+        </div>
+    `;
+}
 
-        for (let i = 0; i < 7; i++) {
-            const dataOggetto = new Date();
-            dataOggetto.setDate(dataOggetto.getDate() + i); // Aggiunge i giorni progressivamente
+// FUNZIONE PER GENERARE I PROSSIMI 7 GIORNI NELLA SELECT (Rimane identica)
+function popolaGiorni() {
+    const selectGiorni = document.getElementById('data-selezionata');
+    const nomiGiorniIta = {
+        'monday': 'Lunedì', 'tuesday': 'Martedì', 'wednesday': 'Mercoledì', 
+        'thursday': 'Giovedì', 'friday': 'Venerdì', 'saturday': 'Sabato', 'sunday': 'Domenica'
+    };
 
-            // Data formattata per l'utente (es. "Giovedì, 21 Giu")
-            let giornoSettimanaInEng = dataOggetto.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
-            let giornoIta = nomiGiorniIta[giornoSettimanaInEng];
-            let infoGiorno = dataOggetto.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
-            
-            let testoVisivo = i === 0 ? `Oggi (${infoGiorno})` : i === 1 ? `Domani (${infoGiorno})` : `${giornoIta} ${infoGiorno}`;
+    for (let i = 0; i < 7; i++) {
+        const dataOggetto = new Date();
+        dataOggetto.setDate(dataOggetto.getDate() + i);
 
-            // Data formattata in formato Database YYYY-MM-DD (es. 2026-06-21)
-            const anno = dataOggetto.getFullYear();
-            const mese = String(dataOggetto.getMonth() + 1).padStart(2, '0');
-            const giorno = String(dataOggetto.getDate()).padStart(2, '0');
-            const valoreDb = `${anno}-${mese}-${giorno}`;
-
-            // Creiamo l'opzione nell'HTML
-            const opzione = document.createElement('option');
-            opzione.value = valoreDb;
-            opzione.text = testoVisivo;
-            selectGiorni.appendChild(opzione);
-        }
-    }
-
-    // Gestione dell'invio del form
-    document.getElementById('form-prenotazione').addEventListener('submit', async (e) => {
-        e.preventDefault();
+        let giornoSettimanaInEng = dataOggetto.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+        let giornoIta = nomiGiorniIta[giornoSettimanaInEng];
+        let infoGiorno = dataOggetto.toLocaleDateString('it-IT', { day: 'numeric', month: 'short' });
         
-        const msgDiv = document.getElementById('risposta-messaggio');
-        const dati = {
-            ristorante_id: RISTORANTE_ID,
-            nome_cliente: document.getElementById('nome_cliente').value,
-            telefono: document.getElementById('telefono').value,
-            data: document.getElementById('data-selezionata').value,
-            ora: document.getElementById('ora').value,
-            persone: document.getElementById('persone').value
-        };
+        let testoVisivo = i === 0 ? `Oggi (${infoGiorno})` : i === 1 ? `Domani (${infoGiorno})` : `${giornoIta} ${infoGiorno}`;
 
-        try {
-            const response = await fetch('https://gestionale-prenotazioni-backend.onrender.com/api/prenotazioni', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(dati)
-            });
+        const anno = dataOggetto.getFullYear();
+        const mese = String(dataOggetto.getMonth() + 1).padStart(2, '0');
+        const giorno = String(dataOggetto.getDate()).padStart(2, '0');
+        const valoreDb = `${anno}-${mese}-${giorno}`;
 
-            const risultato = await response.json();
+        const opzione = document.createElement('option');
+        opzione.value = valoreDb;
+        opzione.text = testoVisivo;
+        selectGiorni.appendChild(opzione);
+    }
+}
 
-            msgDiv.style.display = 'block';
-            if (response.ok) {
-                msgDiv.style.background = '#2ecc71';
-                msgDiv.style.color = 'white';
-                msgDiv.innerText = "Prenotazione ricevuta! Attendi la conferma del locale.";
-                document.getElementById('form-prenotazione').reset();
-            } else {
-                msgDiv.style.background = '#e74c3c';
-                msgDiv.style.color = 'white';
-                msgDiv.innerText = risultato.error || "Errore durante la prenotazione.";
-            }
-        } catch (error) {
-            msgDiv.style.display = 'block';
+// Gestione dell'invio del form
+document.getElementById('form-prenotazione').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const msgDiv = document.getElementById('risposta-messaggio');
+    const dati = {
+        ristorante_id: parseInt(RISTORANTE_ID), // Usiamo l'ID dinamico preso dall'URL!
+        nome_cliente: document.getElementById('nome_cliente').value,
+        telefono: document.getElementById('telefono').value,
+        data: document.getElementById('data-selezionata').value,
+        ora: document.getElementById('ora').value,
+        persone: document.getElementById('persone').value
+    };
+
+    try {
+        const response = await fetch('https://gestionale-prenotazioni-backend.onrender.com/api/prenotazioni', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(dati)
+        });
+
+        const risultato = await response.json();
+
+        msgDiv.style.display = 'block';
+        if (response.ok) {
+            msgDiv.style.background = '#2ecc71';
+            msgDiv.style.color = 'white';
+            msgDiv.innerText = "Prenotazione ricevuta! Attendi la conferma del locale.";
+            document.getElementById('form-prenotazione').reset();
+        } else {
             msgDiv.style.background = '#e74c3c';
             msgDiv.style.color = 'white';
-            msgDiv.innerText = "Impossibile collegarsi al sistema.";
+            msgDiv.innerText = risultato.error || "Errore durante la prenotazione.";
         }
-    });
+    } catch (error) {
+        msgDiv.style.display = 'block';
+        msgDiv.style.background = '#e74c3c';
+        msgDiv.style.color = 'white';
+        msgDiv.innerText = "Impossibile collegarsi al sistema.";
+    }
+});
 
-    // Esegui la funzione al caricamento della pagina
-    window.addEventListener('DOMContentLoaded', popolaGiorni);
+window.addEventListener('DOMContentLoaded', popolaGiorni);
 </script>
 
 </body>
