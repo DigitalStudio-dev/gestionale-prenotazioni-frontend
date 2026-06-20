@@ -92,14 +92,26 @@
         </div>
 
     <div class="panel-box" style="margin-top: 20px;">
-            <h3>Cambia Email Aziendale</h3>
-        <div class="form-group" style="margin-top: 15px;">
-        <label>Nuovo Indirizzo Email</label>
-        <input type="email" id="nuova-email-impostazioni" placeholder="nuovaemail@locale.it">
+    <h3>Cambia Email Aziendale</h3>
+    
+    <div id="div-step-email-1" style="margin-top: 15px;">
+        <div class="form-group">
+            <label>Nuovo Indirizzo Email</label>
+            <input type="email" id="nuova-email-impostazioni" placeholder="nuovaemail@locale.it">
+        </div>
+        <button id="btn-richiedi-email" class="btn-premium" style="margin-top: 10px; width: 100%;">Invia Codice di Verifica</button>
     </div>
-    <button id="btn-salva-email" class="btn-premium" style="margin-top: 10px; width: 100%;">Aggiorna Email</button>
+
+    <div id="div-step-email-2" style="display: none; margin-top: 15px;">
+        <div class="form-group">
+            <label>Codice OTP ricevuto sulla nuova email</label>
+            <input type="text" id="codice-otp-email" placeholder="123456" maxlength="6" style="letter-spacing: 4px; text-align: center;">
+        </div>
+        <button id="btn-conferma-email" class="btn-premium" style="margin-top: 10px; width: 100%; background: linear-gradient(135deg, #10b981, #047857);">Conferma ed Aggiorna</button>
+    </div>
+
     <div id="msg-email" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold;"></div>
-</div>
+    </div>
 
         <div class="panel-box">
             <h3>🔒 Sicurezza Account</h3>
@@ -263,8 +275,8 @@
         } catch (err) { console.error(err); }
     });
 
-    // EVENT LISTENER PER IL CAMBIO EMAIL
-    document.getElementById('btn-salva-email').addEventListener('click', async () => {
+    // STEP 1: RICHIESTA CODICE OTP PER NUOVA EMAIL
+    document.getElementById('btn-richiedi-email').addEventListener('click', async () => {
         const emailInserita = document.getElementById('nuova-email-impostazioni').value.trim();
         const divMsg = document.getElementById('msg-email');
         
@@ -275,8 +287,8 @@
         }
 
         try {
-            const res = await fetch(`${BACKEND_URL}/api/auth/cambia-email`, {
-                method: 'PUT',
+            const res = await fetch(`${BACKEND_URL}/api/auth/richiedi-cambio-email`, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ristoranteId, nuovaEmail: emailInserita })
             });
@@ -284,12 +296,12 @@
             
             if (res.ok) {
                 divMsg.style.color = "#27c93f";
-                divMsg.innerText = "Email aggiornata con successo!";
-                document.getElementById('nuova-email-impostazioni').value = '';
-                // Opzionale: Aggiorna l'email locale se mostrata nell'header della plancia
+                divMsg.innerText = dati.message;
+                document.getElementById('div-step-email-1').style.display = 'none';
+                document.getElementById('div-step-email-2').style.display = 'block';
             } else { 
                 divMsg.style.color = "#ff5f56"; 
-                divMsg.innerText = dati.error || "Errore durante il salvataggio."; 
+                divMsg.innerText = dati.error || "Errore durante l'invio del codice."; 
             }
         } catch (err) { 
             console.error(err); 
@@ -298,21 +310,46 @@
         }
     });
 
-    document.getElementById('btn-salva-password').addEventListener('click', async () => {
-        const pwd = document.getElementById('nuova-password').value;
-        const divMsg = document.getElementById('msg-password');
+    // STEP 2: CONFERMA CODICE E CAMBIO DEFINITIVO
+    document.getElementById('btn-conferma-email').addEventListener('click', async () => {
+        const codice = document.getElementById('codice-otp-email').value.trim();
+        const divMsg = document.getElementById('msg-email');
+
+        if(!codice) {
+            divMsg.style.color = "#ff5f56";
+            divMsg.innerText = "Inserisci il codice ricevuto.";
+            return;
+        }
+
         try {
-            const res = await fetch(`${BACKEND_URL}/api/auth/cambia-password`, {
-                method: 'PUT',
+            const res = await fetch(`${BACKEND_URL}/api/auth/conferma-cambio-email`, {
+                method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ ristoranteId, nuovaPassword: pwd })
+                body: JSON.stringify({ ristoranteId, codice })
             });
+            const dati = await res.json();
+
             if (res.ok) {
                 divMsg.style.color = "#27c93f";
-                divMsg.innerText = "Password aggiornata!";
-                document.getElementById('nuova-password').value = '';
-            } else { divMsg.style.color = "#ff5f56"; divMsg.innerText = "Password troppo corta (min 6 car)."; }
-        } catch (err) { console.error(err); }
+                divMsg.innerText = "Email aggiornata con successo!";
+                
+                // Pulizia e ritorno allo stato iniziale
+                document.getElementById('codice-otp-email').value = '';
+                document.getElementById('nuova-email-impostazioni').value = '';
+                setTimeout(() => {
+                    document.getElementById('div-step-email-2').style.display = 'none';
+                    document.getElementById('div-step-email-1').style.display = 'block';
+                    divMsg.innerText = '';
+                }, 3000);
+            } else {
+                divMsg.style.color = "#ff5f56";
+                divMsg.innerText = dati.error || "Codice errato.";
+            }
+        } catch (err) {
+            console.error(err);
+            divMsg.style.color = "#ff5f56";
+            divMsg.innerText = "Errore di connessione.";
+        }
     });
 
     function logout() {
