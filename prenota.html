@@ -4,79 +4,72 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Prenota un Tavolo</title>
-    <style>
-        * { box-sizing: border-box; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; }
-        body { background: #f4f6f9; padding: 20px; display: flex; justify-content: center; align-items: center; min-height: 100vh; }
-        .booking-card { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.08); width: 100%; max-width: 450px; }
-        h2 { color: #2c3e50; margin-bottom: 20px; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; color: #7f8c8d; font-weight: bold; font-size: 0.9rem; }
-        select, input { width: 100%; padding: 12px; border: 1px solid #ccc; border-radius: 6px; font-size: 1rem; background: #fafafa; }
-        button { width: 100%; padding: 14px; background: #3498db; color: white; border: none; border-radius: 6px; font-size: 1.1rem; font-weight: bold; cursor: pointer; margin-top: 10px; }
-        button:hover { background: #2980b9; }
-        .alert { padding: 10px; border-radius: 6px; text-align: center; margin-top: 15px; font-weight: bold; display: none; }
-    </style>
+    <!-- Collegamento allo stile unico -->
+    <link rel="stylesheet" href="gestionale-style.css">
 </head>
 <body>
 
-<div class="booking-card">
-    <h2>Prenota il tuo Tavolo 🍽️</h2>
-    <form id="form-prenotazione">
-        <div class="form-group">
-            <label>Tuo Nome</label>
-            <input type="text" id="nome_cliente" placeholder="Inserisci Nome e Cognome" required>
+<div class="app-flex-center">
+    <div class="digital-card">
+        <h2 class="app-title"><span class="text-gradient">Prenota il tuo Tavolo 🍽️</span></h2>
+        <form id="form-prenotazione">
+            <div class="form-group">
+                <label>Tuo Nome</label>
+                <input type="text" id="nome_cliente" placeholder="Inserisci Nome e Cognome" required>
+            </div>
+            <div class="form-group">
+                <label>Numero di Telefono</label>
+                <input type="tel" id="telefono" placeholder="Es. 3331234567" required>
+            </div>
+            <div class="form-group">
+                <label>Seleziona Giorno (Prossimi 7 giorni)</label>
+                <select id="data-selezionata" required></select>
+            </div>
+            <div class="form-group">
+                <label>Orario</label>
+                <select id="ora" required>
+                    <option value="19:30">19:30</option>
+                    <option value="20:00">20:00</option>
+                    <option value="20:30">20:30</option>
+                    <option value="21:00">21:00</option>
+                    <option value="21:30">21:30</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Numero di Persone</label>
+                <select id="persone" required>
+                    <option value="1">1 Persona</option>
+                    <option value="2" selected>2 Persone</option>
+                    <option value="3">3 Persone</option>
+                    <option value="4">4 Persone</option>
+                    <option value="5">5 Persone</option>
+                    <option value="6">6 Persone</option>
+                </select>
+            </div>
+            <button type="submit" class="btn-premium">Invia Prenotazione 🚀</button>
+        </form>
+        <div id="risposta-messaggio" class="status-msg"></div>
+        
+        <!-- Link di indicizzazione SEO -->
+        <div class="powered-by-footer">
+            <p>Powered by <a href="https://digitalstudiodev.it" target="_blank">Digital Studio</a> • Soluzioni Professionali</p>
         </div>
-        <div class="form-group">
-            <label>Numero di Telefono</label>
-            <input type="tel" id="telefono" placeholder="Es. 3331234567" required>
-        </div>
-        <div class="form-group">
-            <label>Seleziona Giorno (Prossimi 7 giorni)</label>
-            <select id="data-selezionata" required></select>
-        </div>
-        <div class="form-group">
-            <label>Orario</label>
-            <select id="ora" required>
-                <option value="19:30">19:30</option>
-                <option value="20:00">20:00</option>
-                <option value="20:30">20:30</option>
-                <option value="21:00">21:00</option>
-                <option value="21:30">21:30</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label>Numero di Persone</label>
-            <select id="persone" required>
-                <option value="1">1 Persona</option>
-                <option value="2" selected>2 Persone</option>
-                <option value="3">3 Persone</option>
-                <option value="4">4 Persone</option>
-                <option value="5">5 Persone</option>
-                <option value="6">6 Persone</option>
-            </select>
-        </div>
-        <button type="submit">Invia Prenotazione 🚀</button>
-    </form>
-    <div id="risposta-messaggio" class="alert"></div>
+    </div>
 </div>
 
 <script>
-    // 1. LEGGIAMO AUTOMATICAMENTE L'ID DALL'URL
-// Se il link è prenota.html?id=3, la variabile RISTORANTE_ID diventerà 3!
 const urlParams = new URLSearchParams(window.location.search);
 const RISTORANTE_ID = urlParams.get('id');
 
-// Se qualcuno entra nella pagina senza mettere un ?id= nell'URL, lo blocchiamo
 if (!RISTORANTE_ID) {
     document.body.innerHTML = `
-        <div style="text-align:center; margin-top:50px; font-family:sans-serif;">
+        <div style="text-align:center; margin-top:50px; font-family:sans-serif; color: #F1EDFA;">
             <h2>⚠️ Errore: Link di prenotazione non valido.</h2>
-            <p>Manca l'identificativo del ristorante nell'URL.</p>
+            <p style="color: #A49DB5; margin-top: 10px;">Manca l'identificativo del ristorante nell'URL.</p>
         </div>
     `;
 }
 
-// FUNZIONE PER GENERARE I PROSSIMI 7 GIORNI NELLA SELECT (Rimane identica)
 function popolaGiorni() {
     const selectGiorni = document.getElementById('data-selezionata');
     const nomiGiorniIta = {
@@ -106,13 +99,14 @@ function popolaGiorni() {
     }
 }
 
-// Gestione dell'invio del form
 document.getElementById('form-prenotazione').addEventListener('submit', async (e) => {
     e.preventDefault();
     
     const msgDiv = document.getElementById('risposta-messaggio');
+    msgDiv.className = "status-msg"; // Reset classi temporanee
+    
     const dati = {
-        ristorante_id: parseInt(RISTORANTE_ID), // Usiamo l'ID dinamico preso dall'URL!
+        ristorante_id: parseInt(RISTORANTE_ID),
         nome_cliente: document.getElementById('nome_cliente').value,
         telefono: document.getElementById('telefono').value,
         data: document.getElementById('data-selezionata').value,
@@ -131,25 +125,21 @@ document.getElementById('form-prenotazione').addEventListener('submit', async (e
 
         msgDiv.style.display = 'block';
         if (response.ok) {
-            msgDiv.style.background = '#2ecc71';
-            msgDiv.style.color = 'white';
+            msgDiv.classList.add('success');
             msgDiv.innerText = "Prenotazione ricevuta! Attendi la conferma del locale.";
             document.getElementById('form-prenotazione').reset();
         } else {
-            msgDiv.style.background = '#e74c3c';
-            msgDiv.style.color = 'white';
+            msgDiv.classList.add('error');
             msgDiv.innerText = risultato.error || "Errore durante la prenotazione.";
         }
     } catch (error) {
         msgDiv.style.display = 'block';
-        msgDiv.style.background = '#e74c3c';
-        msgDiv.style.color = 'white';
+        msgDiv.classList.add('error');
         msgDiv.innerText = "Impossibile collegarsi al sistema.";
     }
 });
 
 window.addEventListener('DOMContentLoaded', popolaGiorni);
 </script>
-
 </body>
 </html>

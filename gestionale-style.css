@@ -1,0 +1,191 @@
+/* ==========================================================================
+   DIGITAL STUDIO DESIGN SYSTEM - FOR APP GESTIONALE
+   ========================================================================== */
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;800&display=swap');
+
+:root {
+    --bg-dark-night: #0F0A1C;   /* Deep Purple Night */
+    --bg-card-slate: #1A1230;   /* Dark Violet Slate */
+    --text-white: #F1EDFA;      /* Ice White */
+    --text-gray: #A49DB5;       /* Muted Gray */
+    --text-muted: #6C6382;      /* Footer Gray */
+    --cyber-pink: #FF2A85;      /* Primary Accent */
+    --neon-violet: #8B5CF6;     /* Secondary Accent */
+    --gradient-primary: linear-gradient(135deg, #FF2A85, #8B5CF6);
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    font-family: 'Plus Jakarta Sans', sans-serif;
+}
+
+body {
+    background-color: var(--bg-dark-night);
+    color: var(--text-white);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* CONTAINER CENTRATI (Login, Registrazione, Prenota) */
+.app-flex-center {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex: 1;
+    padding: 20px;
+}
+
+/* LE CARD STILE TECH-CARD DIGITAL STUDIO */
+.digital-card {
+    background-color: var(--bg-card-slate);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 16px;
+    padding: 40px;
+    width: 100%;
+    max-width: 450px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+    position: relative;
+}
+
+/* Decorazione 3 pallini tipo finestra codice */
+.digital-card::before {
+    content: '';
+    position: absolute;
+    top: 15px;
+    left: 20px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #ff5f56;
+    box-shadow: 12px 0 0 #ffbd2e, 24px 0 0 #27c93f;
+}
+
+/* TITOLI CON GRADIENTE */
+.text-gradient {
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    font-weight: 800;
+}
+
+h2.app-title {
+    font-size: 1.8rem;
+    margin-bottom: 25px;
+    text-align: center;
+}
+
+/* CAMPI DI INPUT E SELECT */
+.form-group {
+    margin-bottom: 20px;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-gray);
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    background-color: var(--bg-dark-night);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    border-radius: 8px;
+    color: var(--text-white);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    outline: none;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: var(--cyber-pink);
+    box-shadow: 0 0 12px rgba(255, 42, 133, 0.2);
+}
+
+/* BOTTONI PREMIUM */
+.btn-premium {
+    width: 100%;
+    padding: 12px;
+    background: var(--cyber-pink);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(255, 42, 133, 0.3);
+}
+
+.btn-premium:hover {
+    background-color: #e01f70;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(255, 42, 133, 0.5);
+}
+
+/* MESSAGGI DI NOTIFICA (Successo / Errore) */
+.status-msg {
+    padding: 12px;
+    border-radius: 6px;
+    margin-top: 15px;
+    font-size: 0.9rem;
+    text-align: center;
+    display: none;
+}
+
+.status-msg.success { background: rgba(39, 201, 63, 0.15); color: #27c93f; border: 1px solid #27c93f; }
+.status-msg.error { background: rgba(255, 95, 86, 0.15); color: #ff5f56; border: 1px solid #ff5f56; }
+
+/* SIGNATURE FOOTER BRANDED (INDICIZZAZIONE SEO) */
+.powered-by-footer {
+    text-align: center;
+    padding: 20px;
+    margin-top: auto;
+}
+
+.powered-by-footer p {
+    color: var(--text-muted);
+    font-size: 0.85rem;
+}
+
+.powered-by-footer a {
+    color: var(--cyber-pink);
+    text-decoration: none;
+    font-weight: 600;
+    transition: opacity 0.3s ease;
+}
+
+.powered-by-footer a:hover {
+    opacity: 0.8;
+}
+
+/* ==========================================================================
+   STILI SPECIFICI PER DASHBOARD (LAYOUT AVANZATO)
+   ========================================================================== */
+.dashboard-container {
+    max-width: 1200px;
+    width: 100%;
+    margin: 0 auto;
+    padding: 40px 20px;
+}
+
+.dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(139, 92, 246, 0.1);
+    padding-bottom: 20px;
+    margin-bottom: 40px;
+}
+
+/* Tabelle per le prenotazioni */
+.table-responsive { width: 100%; overflow-x: auto; margin-top: 20px; border-radius: 8px; border: 1px solid rgba(139, 92, 246, 0.1); }
+.digital-table { width: 100%; border-collapse: collapse; text-align: left; background: var(--bg-card-slate); }
+.digital-table th { background: rgba(139, 92, 246, 0.1); color: var(--text-white); padding: 15px; font-weight: 600; }
+.digital-table td { padding: 15px; border-bottom: 1px solid rgba(241, 237, 250, 0.05); color: var(--text-gray); }
