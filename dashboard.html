@@ -91,6 +91,16 @@
             <div id="msg-capienza" style="margin-top:8px; font-size:0.9rem; font-weight:bold;"></div>
         </div>
 
+    <div class="panel-box" style="margin-top: 20px;">
+            <h3>Cambia Email Aziendale</h3>
+        <div class="form-group" style="margin-top: 15px;">
+        <label>Nuovo Indirizzo Email</label>
+        <input type="email" id="nuova-email-impostazioni" placeholder="nuovaemail@locale.it">
+    </div>
+    <button id="btn-salva-email" class="btn-premium" style="margin-top: 10px; width: 100%;">Aggiorna Email</button>
+    <div id="msg-email" style="margin-top: 10px; font-size: 0.9rem; font-weight: bold;"></div>
+</div>
+
         <div class="panel-box">
             <h3>🔒 Sicurezza Account</h3>
             <label>Nuova Password Account</label>
@@ -251,6 +261,41 @@
                 recuperaCapienzaIniziale();
             } else { divMsg.style.color = "#ff5f56"; divMsg.innerText = "Errore durante il salvataggio."; }
         } catch (err) { console.error(err); }
+    });
+
+    // EVENT LISTENER PER IL CAMBIO EMAIL
+    document.getElementById('btn-salva-email').addEventListener('click', async () => {
+        const emailInserita = document.getElementById('nuova-email-impostazioni').value.trim();
+        const divMsg = document.getElementById('msg-email');
+        
+        if(!emailInserita || !emailInserita.includes('@')) {
+            divMsg.style.color = "#ff5f56";
+            divMsg.innerText = "Inserisci un'email valida.";
+            return;
+        }
+
+        try {
+            const res = await fetch(`${BACKEND_URL}/api/auth/cambia-email`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ristoranteId, nuovaEmail: emailInserita })
+            });
+            const dati = await res.json();
+            
+            if (res.ok) {
+                divMsg.style.color = "#27c93f";
+                divMsg.innerText = "Email aggiornata con successo!";
+                document.getElementById('nuova-email-impostazioni').value = '';
+                // Opzionale: Aggiorna l'email locale se mostrata nell'header della plancia
+            } else { 
+                divMsg.style.color = "#ff5f56"; 
+                divMsg.innerText = dati.error || "Errore durante il salvataggio."; 
+            }
+        } catch (err) { 
+            console.error(err); 
+            divMsg.style.color = "#ff5f56";
+            divMsg.innerText = "Impossibile collegarsi al server.";
+        }
     });
 
     document.getElementById('btn-salva-password').addEventListener('click', async () => {
